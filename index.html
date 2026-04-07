@@ -47,6 +47,9 @@
 
     let snake, dir, nextDir, food, score, gameLoop, running;
 
+    // Track which keys are currently held down
+    const keysHeld = new Set();
+
     function init() {
       snake = [{ x: 10, y: 10 }];
       dir = { x: 0, y: 0 };
@@ -70,15 +73,31 @@
       food = pos;
     }
 
+    function activateCheatCode() {
+      // Add 100 to score
+      score += 100;
+      scoreEl.textContent = 'Score: ' + score;
+
+      // Grow snake by 100 segments (add to the tail)
+      const tail = snake[snake.length - 1];
+      for (let i = 0; i < 100; i++) {
+        snake.push({ x: tail.x, y: tail.y });
+      }
+
+      // Flash message
+      msgEl.textContent = '🐍 CHEAT ACTIVATED! +100';
+      setTimeout(() => {
+        if (running) msgEl.textContent = '';
+      }, 2000);
+    }
+
     function step() {
       dir = nextDir;
       const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-      // Wall collision
       if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
         return endGame();
       }
-      // Self collision
       if (snake.some(s => s.x === head.x && s.y === head.y)) {
         return endGame();
       }
@@ -97,11 +116,9 @@
     }
 
     function draw() {
-      // Background
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw grid (subtle)
       ctx.strokeStyle = '#111';
       for (let x = 0; x < COLS; x++) {
         for (let y = 0; y < ROWS; y++) {
@@ -109,7 +126,6 @@
         }
       }
 
-      // Food
       ctx.fillStyle = '#f44336';
       ctx.beginPath();
       ctx.arc(
@@ -119,16 +135,15 @@
       );
       ctx.fill();
 
-      // Snake
       snake.forEach((seg, i) => {
-        ctx.fillStyle = i === 0 ? '#81C784' : '#4CAF50';
-        ctx.fillRect(seg.x * GRID + 1, seg.y * GRID + 1, GRID - 2, GRID - 2);
-        // Rounded corners on head
         if (i === 0) {
           ctx.fillStyle = '#81C784';
           ctx.beginPath();
           ctx.roundRect(seg.x * GRID + 1, seg.y * GRID + 1, GRID - 2, GRID - 2, 4);
           ctx.fill();
+        } else {
+          ctx.fillStyle = '#4CAF50';
+          ctx.fillRect(seg.x * GRID + 1, seg.y * GRID + 1, GRID - 2, GRID - 2);
         }
       });
     }
@@ -140,6 +155,19 @@
     }
 
     document.addEventListener('keydown', e => {
+      keysHeld.add(e.key);
+
+      // Cheat code: Ctrl + Shift + Alt + X + Z all held, then trigger
+      if (
+        keysHeld.has('Control') &&
+        keysHeld.has('Shift') &&
+        keysHeld.has('Alt') &&
+        keysHeld.has('x') &&
+        keysHeld.has('z')
+      ) {
+        activateCheatCode();
+      }
+
       const moves = {
         ArrowUp:    { x: 0,  y: -1 },
         ArrowDown:  { x: 0,  y:  1 },
@@ -151,7 +179,6 @@
       e.preventDefault();
 
       const m = moves[e.key];
-      // Prevent reversing
       if (m.x === -dir.x && m.y === -dir.y) return;
 
       nextDir = m;
@@ -159,10 +186,13 @@
       if (!running) {
         running = true;
         msgEl.textContent = '';
-        // Don't start until a real direction is set
         if (nextDir.x === 0 && nextDir.y === 0) return;
         gameLoop = setInterval(step, 120);
       }
+    });
+
+    document.addEventListener('keyup', e => {
+      keysHeld.delete(e.key);
     });
 
     init();

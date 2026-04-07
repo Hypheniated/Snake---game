@@ -157,13 +157,11 @@
     document.addEventListener('keydown', e => {
       keysHeld.add(e.key);
 
-      // Cheat code: Ctrl + Shift + Alt + X + Z all held, then trigger
-      if (
+      // Cheat code: Ctrl + Shift + X all held, then trigger
+     if (
         keysHeld.has('Control') &&
         keysHeld.has('Shift') &&
-        keysHeld.has('Alt') &&
-        keysHeld.has('x') &&
-        keysHeld.has('z')
+        keysHeld.has('X')
       ) {
         activateCheatCode();
       }
